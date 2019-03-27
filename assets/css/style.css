@@ -1,7 +1,12 @@
+html {
+    height: 70%;
+}
+
 body {
     margin-left: 5%;
     margin-right: 5%;
     margin-bottom: 0;
+    height: 100%;
 }
 
 #game-header {
@@ -20,22 +25,31 @@ body {
     width: 35%;
     display: inline-block;
     vertical-align: top;
-    top: +10px;
+    /*top: +10px;*/
     position: relative;
     margin-left: +10px;
     background-color: lightblue;
+    height: 100%;
 }
 
 .rps-choice-img {
-    height: 200px;
-    width: 200px;
+    height: 175px;
+    width: 175px;
     margin:5px;
     display: inline-block;
 }
 
-
 #screen-name {
     width: 100%;
+}
+
+#msg-text {
+    width: 90%;
+    display: inline-block;
+}
+
+#msg-submit-btn {
+    display: inline-block;
 }
 
 .choice-btn {
@@ -54,4 +68,26 @@ body {
 
 .name-span {
     display: block;
+}
+
+.player-nametag {
+    display: inline-block;
+}
+
+#player-choice,
+#player-1-choice,
+#player-2-choice {
+    display: inline-block;
+}
+
+#chat-display {
+    min-height: 100%;
+    margin: auto;
+    overflow: auto;
+}
+
+#throw-button {
+    display: inline-block;
+    height: 100px;
+    width: 100px;
 }

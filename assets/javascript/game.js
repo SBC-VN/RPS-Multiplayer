@@ -1,3 +1,9 @@
+var playerDbId="1";
+var initialChoiceTime=20;
+var currentChoiceTime=20;
+var timerId;
+var roundId=0;
+
 // Array of allowable choices.  Can add Spoc(k) and (L)izard later.
 var gameChoices = ['r', 'p', 's'];
 
@@ -36,3 +42,67 @@ $(".choice-btn").on("click",function() {
     }   
     $("#screen-name").val("");
 });
+
+var playerCurrentChoice="";
+
+// Select Rock, Paper, or Scissors..
+$("#main-section").on("click","img",function() {
+    var buttonId = this.getAttribute("id");
+    if (buttonId === "player-rock-choice") {
+        playerCurrentChoice = "r";
+        $("#player-rock-choice").css("opacity",1);
+        $("#player-paper-choice").css("opacity",0.3);
+        $("#player-scissors-choice").css("opacity",0.3);
+    }
+    else if (buttonId === "player-paper-choice") {
+        playerCurrentChoice = "p";
+        $("#player-rock-choice").css("opacity",0.3);
+        $("#player-paper-choice").css("opacity",1);
+        $("#player-scissors-choice").css("opacity",0.3);
+    }
+    else if (buttonId === "player-scissors-choice") {
+        playerCurrentChoice = "s";
+        $("#player-rock-choice").css("opacity",0.3);
+        $("#player-paper-choice").css("opacity",0.3);
+        $("#player-scissors-choice").css("opacity",1);
+    }
+    else {
+        playerCurrentChoice="";
+    }
+});
+
+function processThrow() {
+    clearInterval(timerId);
+    console.log("Player throws!",playerCurrentChoice);
+    // playerDbId
+    // playerCurrentChoice
+
+}
+
+// The click on "throw"..
+$("#main-section").on("click","button",function() {
+    var buttonId = this.getAttribute("id");
+    if (buttonId === "throw-button") {
+        processThrow();
+    }
+});
+
+function timerTickHandler() {
+    $("#time-remaining").text(--currentChoiceTime);
+    if (currentChoiceTime <= 0) {
+        processThrow();
+    }
+}
+
+function startRound() {
+    roundId++;
+    $("#sub-header").text("Round: " + roundId);
+    currentChoiceTime = initialChoiceTime;
+    $("#player-rock-choice").css("opacity",1);
+    $("#player-paper-choice").css("opacity",1);
+    $("#player-scissors-choice").css("opacity",1);
+    clearInterval(timerId);
+    timerId = setInterval(timerTickHandler,1000);
+}
+
+startRound();
