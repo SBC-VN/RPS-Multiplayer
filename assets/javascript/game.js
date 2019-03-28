@@ -1,4 +1,4 @@
-var playerDbId="1";
+var playerDbConnection;
 var initialChoiceTime=20;
 var currentChoiceTime=20;
 var timerId;
@@ -29,19 +29,21 @@ gameMatrix[gameChoices.indexOf('p')][gameChoices.indexOf('s')] = 2;
 
 
 // Login..
-$(".choice-btn").on("click",function() {
+$(".register-btn").on("click",function() {
     var screenName = $("#screen-name").val();
     if (screenName) {
-        var buttonId = this.getAttribute("id");
-        if (buttonId === "btn-spectate") {
-            console.log("spectator",screenName);
-        }
-        else if (buttonId === "btn-play") {
-            console.log("player",screenName);
-        }
-    }   
+        dbSetPlayerName(screenName, this.getAttribute("id"));
+    }
     $("#screen-name").val("");
 });
+
+function displayLobby(playerType) {    
+    if (playerType === "btn-play") {
+        dbAddPlayerToQueue();
+    }
+    console.log("switch to lobby");
+}   
+
 
 var playerCurrentChoice="";
 
@@ -105,4 +107,3 @@ function startRound() {
     timerId = setInterval(timerTickHandler,1000);
 }
 
-startRound();
