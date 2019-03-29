@@ -41,11 +41,19 @@ function displayLobby(playerType) {
     if (playerType === "btn-play") {
         dbAddPlayerToQueue();
     }
-    console.log("switch to lobby");
+    $("#main-section").empty();
+    $("#right-section").empty();
+    $("#sub-header").text("Game Lobby");
 }   
 
 
 var playerCurrentChoice="";
+
+$("#msg-submit-btn").on("click",function(event) {
+    event.preventDefault();
+    var msgText = "[" + dbPlayerName + "] " + $("#msg-text").val();
+    $("#chat-display").append($("<div>").text(msgText));
+});
 
 // Select Rock, Paper, or Scissors..
 $("#main-section").on("click","img",function() {
@@ -78,7 +86,6 @@ function processThrow() {
     console.log("Player throws!",playerCurrentChoice);
     // playerDbId
     // playerCurrentChoice
-
 }
 
 // The click on "throw"..
@@ -106,3 +113,9 @@ function startRound() {
     clearInterval(timerId);
     timerId = setInterval(timerTickHandler,1000);
 }
+
+$( document ).ready(function() {
+    var instructions = $("#instructions-object");
+    $("#main-section").append(instructions);
+});
+

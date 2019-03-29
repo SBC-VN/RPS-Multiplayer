@@ -18,6 +18,21 @@
     <br>
     
     <div id="main-section">
+        
+    </div>
+    
+    <div id="right-section">
+        <form>
+            <h5>Name:</h5>
+            <input type="text" name="screenname" id="screen-name">
+        </form>
+        <div id="button-div">
+            <button type="button" class="btn btn-success register-btn" id="btn-spectate">Spectate</button>
+            <button type="button" class="btn btn-primary register-btn" id="btn-play">Play</button>
+        </div>
+    </div>
+
+    <div id="hidden-stuff">
         <div id="instructions-object"> 
             <h3>Instructions:</h3>
             <div id="instruction-text">
@@ -46,16 +61,25 @@
                 <a href="https://en.wikipedia.org/wiki/Rock%E2%80%93paper%E2%80%93scissors">Wikipedia RPS entry</a>
             </div>
         </div>
-    </div>
-    
-    <div id="right-section">
-        <form>
-            <h5>Name:</h5>
-            <input type="text" name="screenname" id="screen-name">
-        </form>
-        <div id="button-div">
-            <button type="button" class="btn btn-success register-btn" id="btn-spectate">Spectate</button>
-            <button type="button" class="btn btn-primary register-btn" id="btn-play">Play</button>
+
+        <div id="chat-section">
+            <h5>Chat</h5>
+            <form>            
+                <input type="text" name="message" id="msg-text">
+                <button type="submit" value="Submit" id="msg-submit-btn">+</button>
+            </form>        
+            <div id="chat-display">
+            </div>
+        </div>
+
+        <div id="player-section">
+            <div id="player-nametag" class="nametag">
+                <span class="name-span"><h3>Player</h3></span>
+                <span class="name-span" id="player-name">Name 1</span>
+            </div>
+            <div id="player-choice">
+                <img src="./assets/images/question.png" id="player-choice-img" class="rps-choice-img">
+            </div>
         </div>
     </div>
 
