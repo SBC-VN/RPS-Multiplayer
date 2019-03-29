@@ -15,12 +15,14 @@
         <h3 id="sub-header">Game Screen</h3>
         <hr>
     </div>
-    <br>
+    <div id="timer-section">
+        <h4>Highlight your choice, you have <span id="time-remaining">20</span> seconds. Then click:
+        <button type="button" class="btn btn-warning" id="throw-button">Throw!</button></h4>
+    </div>
     
     <div id="main-section">
         <div id="player-1-section">
             <div id="player-1-nametag" class="player-nametag">
-                <h3>Seconds remaining: <span id="time-remaining">20</span></h3>
                 <span class="name-span"><h3>Your choices:</h3></span>
                 
             </div>
@@ -29,7 +31,7 @@
                 <img src="./assets/images/paper.png" id="player-paper-choice" class="rps-choice-img">
                 <img src="./assets/images/scissors.png" id="player-scissors-choice" class="rps-choice-img">
             </div>
-             <button type="button" id="throw-button">Throw!</button>
+             
         </div>
         <hr>
         <div id="player-2-section">
@@ -40,6 +42,10 @@
             <div id="player-2-choice">
                 <img src="./assets/images/question.png" id="player-2-nochoice-img" class="rps-choice-img">
             </div>
+        </div>
+
+        <div id="results-section">
+            <h2>Player <span id="winning-player">name</span> wins!</h2>
         </div>
     </div>
     

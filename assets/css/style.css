@@ -98,12 +98,11 @@ body {
     overflow: auto;
 }
 
-#throw-button {
-    display: inline-block;
-    height: 100px;
-    width: 100px;
-}
-
 #hidden-stuff {
     display: none;
+}
+
+#timer-section {
+    width: 65%;
+    text-align: center;
 }
