@@ -106,4 +106,3 @@ function startRound() {
     clearInterval(timerId);
     timerId = setInterval(timerTickHandler,1000);
 }
-
