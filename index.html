@@ -15,10 +15,12 @@
         <h3 id="sub-header">Welcome to the game!</h3>
         <hr>
     </div>
-    <br>
+    <div id="timer-section" style="display:none">
+        <h4>Highlight your choice, you have <span id="time-remaining">20</span> seconds. Then click:
+        <button type="button" class="btn btn-warning" id="throw-button">Throw!</button></h4>
+    </div>
     
-    <div id="main-section">
-        
+    <div id="main-section"> 
     </div>
     
     <div id="right-section">
@@ -72,13 +74,25 @@
             </div>
         </div>
 
-        <div id="player-section">
+        <div id="player-view-section">
             <div id="player-nametag" class="nametag">
-                <span class="name-span"><h3>Player</h3></span>
+                <span class="name-span" id="player-name-tag"><h3>Player</h3></span>
                 <span class="name-span" id="player-name">Name 1</span>
             </div>
-            <div id="player-choice">
+            <div id="player-choice-default" class="player-choice">
                 <img src="./assets/images/question.png" id="player-choice-img" class="rps-choice-img">
+            </div>
+        </div>
+
+        <div id="player-play-section">
+            <div id="player-nametag" class="nametag">
+                <span class="name-span" id="player-name-tag"><h3>Player</h3></span>
+                <span class="name-span" id="player-name">Name 1</span>
+            </div>
+            <div id="player-choice-template">
+                <img src="./assets/images/rock.png" id="player-rock-choice" class="rps-choice-img">
+                <img src="./assets/images/paper.png" id="player-paper-choice" class="rps-choice-img">
+                <img src="./assets/images/scissors.png" id="player-scissors-choice" class="rps-choice-img">
             </div>
         </div>
     </div>
@@ -88,6 +102,7 @@
     <script src="https://stackpath.bootstrapcdn.com/bootstrap/4.3.1/js/bootstrap.min.js" integrity="sha384-JjSmVgyd0p3pXB1rRibZUAYoIIy6OrQ6VrjIEaFf/nJGzIxFDsf4x0xIM+B07jRM" crossorigin="anonymous"></script>
     <script src="https://www.gstatic.com/firebasejs/5.9.1/firebase.js"></script>
     <script src=".\assets\javascript\database.js"></script>
+    <script src=".\assets\javascript\dbinterface.js"></script>
     <script src=".\assets\javascript\game.js"></script>
 </body>
 </html>

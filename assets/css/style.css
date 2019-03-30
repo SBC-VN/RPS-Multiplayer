@@ -82,13 +82,12 @@ body {
     display: block;
 }
 
-.player-nametag {
+.nametag {
     display: inline-block;
+    width:30%;
 }
 
-#player-choice,
-#player-1-choice,
-#player-2-choice {
+.player-choice {
     display: inline-block;
 }
 

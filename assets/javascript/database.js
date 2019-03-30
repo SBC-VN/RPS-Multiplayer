@@ -1,18 +1,4 @@
 
-var appConfig = {
-    apiKey: "AIzaSyDXrunidIfB2HC2tJqWKf8lGo17_qNL3eg",
-    authDomain: "rpsonline-d0424.firebaseapp.com",
-    databaseURL: "https://rpsonline-d0424.firebaseio.com",
-    projectId: "rpsonline-d0424",
-    storageBucket: "rpsonline-d0424.appspot.com",
-    messagingSenderId: "486550605953"
-};
-
-firebase.initializeApp(appConfig);
-
-// Create a variable to reference the database.
-var database = firebase.database();
-
 // Database structure:
 //
 // {
@@ -29,27 +15,65 @@ var database = firebase.database();
 // }
 //
 
-// Create all the other references to the database.
-var dbIsConnected = database.ref(".info/connected");
-var dbRefPlayer1 = database.ref("/player1");
-var dbRefPlayer2 = database.ref("/player2");
-var dbGameRound = database.ref("/round");
-var dbRefPlayer1Start = database.ref("/player1-start");
-var dbRefPlayer2Start = database.ref("/player2-start");
-var dbRefPlayer1Choice = database.ref("/player1-choice");
-var dbRefPlayer2Choice = database.ref("/player2-choice");
-var dbRefUsersList = database.ref("/users");
-var dbRefWaitList = database.ref("/wait-list");
-var dbRefMessages = database.ref("/messages");
+var appConfig = {
+    apiKey: "AIzaSyDXrunidIfB2HC2tJqWKf8lGo17_qNL3eg",
+    authDomain: "rpsonline-d0424.firebaseapp.com",
+    databaseURL: "https://rpsonline-d0424.firebaseio.com",
+    projectId: "rpsonline-d0424",
+    storageBucket: "rpsonline-d0424.appspot.com",
+    messagingSenderId: "486550605953"
+};
 
-var isPlayerRegistered = false;
+firebase.initializeApp(appConfig);
+
+// Create a variable to reference the database.
+var database = firebase.database();
+
+// Keep check if we are connected.
+var dbIsConnected = database.ref(".info/connected");
+
+// We will have a list of users that are connected.
+// Each user keeps their own connection information handy.
+var dbRefUsersList = database.ref("/users");
 var dbConnectionObject = null;
+var isPlayerRegistered = false;
 var dbPlayerName = null;
 var playerNumber = 0;
-var dbPlayer1Choice = null;
-var dbPlayer2Choice = null;
+
+// One user is chosen to be the only one allowed to maintain the 
+// 'critical section' tables - such as who is chosen to play next, etc.
+var dbRefSuperUser = database.ref("/super-user");
+var dbSuperUser = null;
+
+// We will also have a queue of players hanging out in the lobby waiting to play.
+// Each user is allowed to wait once - and will keep track of that.
+var dbRefWaitList = database.ref("/wait-list");
+var dbWaitListObject = null;
+
+// Chat messages will be broadcast through the database.  Only the
+// last chat will be stored - all the other messages will be local.
+var dbRefMessages = database.ref("/messages");
+
+//  Commonly used references.
+var dbRefPlayer1 = database.ref("/player1");
 var dbPlayer1 = null;
+
+var dbRefPlayer2 = database.ref("/player2");
 var dbPlayer2 = null;
+
+var dbRefGameRound = database.ref("/round");
+var dbGameRound = 0;
+var dbRefPlayer1Start = database.ref("/player1-start");
+var dbPlayer1Ready=false;
+var dbRefPlayer2Start = database.ref("/player2-start");
+var dbPlayer1Ready=false;
+
+var dbRefPlayer1Choice = database.ref("/player1-choice");
+var dbPlayer1Choice = null;
+var dbRefPlayer2Choice = database.ref("/player2-choice");
+var dbPlayer2Choice = null;
+
+var playCheckRunning = false;
 
 // Register the user's connection to the database.  
 // Will attach a player name to it later.
@@ -60,156 +84,218 @@ dbIsConnected.on("value", function(snap) {
     }
 });
 
-// See if the provided playerName is already in use.  If so, return a false,
-// if not - change the temp-name to the player's name.
-// Using async cause we are going to wait on this later..
-function dbSetPlayerName(playerName,playerType) {
-    dbRefUsersList.once("value",function(snap) {
-        if (snap.val()) {
-            var userArray = Object.values(snap.val());
-            if (userArray.includes(playerName)) {
-                alert("Name is already in-use.  Please choose another.");
-                return;
+// The player queue will kindof function like the user list.
+//  If a player disconnects, they will automatically be removed from the queue.
+//  When a player gets into a game, they will remove their own record in the queue.
+function dbAddPlayerToQueue() {
+    if (isPlayerRegistered) {
+        dbWaitListObject = dbRefWaitList.push(dbConnectionObject.key);
+        dbWaitListObject.onDisconnect().remove();
+    }
+}
+
+//
+//  Super user concept: to eliminate the possibility of multiple users trying to update
+//  'critical section' items (such as players) - we will designate some user as
+//  'super user' and that will be the only user allowed to access those critial sections.
+//
+dbRefSuperUser.on("value", function(snap) {
+    if (snap.val()) {
+        dbSuperUser = snap.val();
+        if (dbSuperUser == dbPlayerName) {
+            if (!playCheckRunning) {
+                setTimeout(playCheck,30000);
             }
         }
- 
-        dbConnectionObject.set(playerName);
-        isPlayerRegistered=true;
-        dbPlayerName=playerName;
-        playerNumber = 0;
-        displayLobby(playerType);
-    });
+    }
+    else if (isPlayerRegistered) {
+        // If there's no super user, make the current user it..
+        dbRefSuperUser.set(dbPlayerName);
+    }
+});
+
+function playCheck() {
+    if (dbPlayerName == dbSuperUser) {
+        if (dbPlayer1 == null && 
+            dbPlayer2 == null) {
+            console.log("PlayCheck Initiate Game");
+            initateNewGame();
+            setTimeout(playCheck,30000);
+        }
+        else {
+            setTimeout(playCheck,60000);
+        }
+    }
 }
 
 // When a user leaves, need to clean up things.  
 //   So, if they were playing - that's a 'rage quit' game over right there.
-//   Or, they may have been in the queue to play - so they would need to be removed.
+//   Or they may just be the 'senior user' in which case we'll need to pick someone else.
 //
-dbRefUsersList.on("child_removed", function(data) {
-    console.log(data);
+dbRefUsersList.on("value", function(snap) {
+    if (snap.val()) {
+        dbUserList = Object.values(snap.val());
+        console.log(dbUserList);
+        
+        if (dbSuperUser == null || !dbUserList.includes(dbSuperUser)) {
+            // Uh oh... senior user went away... Set first user as senior user
+            
+            if (dbUserList.length > 0) {
+                dbRefSuperUser.set(dbUserList[0]);                
+            }
+            else if (dbPlayerName) {
+                dbRefSuperUser.set(dbPlayerName);
+            }
+            else {
+                console.log("No super user can be set");
+                return;
+            }
+        }
+
+        if (dbPlayer1 && !dbUserList.includes(dbPlayer1)) {
+            // Player 1 left...
+            dbRefMessages.set("[] Player 1 left game.");
+            dbRefPlayer1.set("");
+        }
+
+        if (dbPlayer2 && !dbUserList.includes(dbPlayer2)) {
+            // Player 1 left...
+            dbRefMessages.set("[] Player 2 left game.");
+            dbRefPlayer2.set("");
+        }
+    }
+    else {
+        // If the array in the forest changes, does it make a sound?
+        dbUserList = [];
+    }
+
+    if (dbUserList.length < 2) {
+        dbRefPlayer1.set("");
+        dbRefPlayer1Choice.set("");
+        dbRefPlayer2.set("");
+        dbRefPlayer2Choice.set("");
+    }
 });
 
-// Add the player to the player queue...
-function dbAddPlayerToQueue() {
-    if (isPlayerRegistered) {
-        dbRefWaitList.push(dbPlayerName);
-    }
-}
-
-dbRefWaitList.on("value",function(snap) {
-    if (snap.val()) {
-        var waitArray = Object.values(snap.val());
-        if (waitArray.length > 1 && !dbPlayer1 && !dbPlayer2) {
-            // At least two people in the queue, but no game going on.
+// Monitors the wait queue to start a game if there are two players waiting and no
+// game in progress.  
+// Only the super user will commence the game.
+//
+dbRefWaitList.on("value",function(snap) {    
+    if (dbPlayerName == dbSuperUser && 
+        dbPlayer1 == null && 
+        dbPlayer2 == null) {
+        if (snap.val() && Object.values(snap.val()).length >= 2) {
             initateNewGame();
         }
-    }    
+    }
 });
 
+
+// Adds the chat message to the chat display from the database..
 dbRefMessages.on("value",function(snap) {
     $("#chat-display").append($("<div>").text(snap.val()));
 });
 
-function addChatMessage(message) {
-    msgText = "[" + dbPlayerName + "] " + message;
-    database.ref("/messages").set(msgText);
-}
-
+// When player 1 is selected/changed updates the on-screen information.
 dbRefPlayer1.on("value",function(snap) {
     if (snap.val())
     {
         dbPlayer1 = snap.val();
         if (dbPlayer1 === dbPlayerName) {
             playerNumber = 1;
+            setPlayerDisplay(1);
             return;
         }
         else {
-            var $playerSection = $("#player-1-section");
-            var $playerName = $playerSection.getElementById("#player-name");
-            $playerName.text(dbPlayer1);
+            var playerSection = $("#player-1-section");
+            var playerName = playerSection.find("#player-name");
+            playerName.text(dbPlayer1);
         }
     }
 });
 
+// When player 2 is selected/changed updates the on-screen information.
 dbRefPlayer2.on("value",function(snap) {
     if (snap.val())
     {
         dbPlayer2 = snap.val();
         if (dbPlayer2 === dbPlayerName) {
             playerNumber = 2;
+            setPlayerDisplay(2);
             return;
         }
         else {
             var $playerSection = $("#player-2-section");
-            var $playerName = $playerSection.getElementById("#player-name");
+            var $playerName = $playerSection.find("#player-name");
             $playerName.text(dbPlayer2);
         }
     }
 });
 
-dbRefPlayer1Choice.on("value",function(snap) {    
-    if (snap.val() && playerNumber != 1)
-    {
-        var playerSection = $("#player-1-section");
-        var playerChoiceImage = playerSection.getElementById("#player-choice-img");
-        var dbPlayer1Choice = snap.val();
-        if (dbPlayer1Choice === 'r') {
-            playerChoiceImage.attr("src","./assets/images/rock.png");
-        }
-        else if (dbPlayer1Choice === 'p') {
-            playerChoiceImage.attr("src","./assets/images/paper.png");
-        }
-        else if (dbPlayer1Choice === 'p') {
-            playerChoiceImage.attr("src","./assets/images/scissors.png");
-        }
-        else {
-            playerChoiceImage.attr("src","./assets/images/question.png");
-            dbPlayer1Choice=null;
-        }
-        checkThrows(); 
+// When player 1 updates their choice in the database it will show this in the lobby.
+dbRefPlayer1Choice.on("value",function(snap) {
+    console.log("Player1 choice",snap.val());
+    if (!snap.val()) {
+        dbPlayer1Choice = "";
     }
-});
-
-dbRefPlayer2Choice.on("value",function(snap) {
-    if (snap.val() && playerNumber != 2)
+    else
     {
-        var playerSection = $("#player-2-section");
-        var playerChoiceImage = playerSection.getElementById("#player-choice-img");
-        var dbPlayer2Choice = snap.val();
-        if (dbPlayer2Choice === 'r') {
-            playerChoiceImage.attr("src","./assets/images/rock.png");
+        dbPlayer1Choice = snap.val();
+
+        if (playerNumber != 1)
+        {
+            var playerSection = $("#player-1-section");
+            var playerChoiceImage = playerSection.find("#player-choice-img");        
+            if (dbPlayer1Choice === 'r') {
+                playerChoiceImage.attr("src","./assets/images/rock.png");
+            }
+            else if (dbPlayer1Choice === 'p') {
+                playerChoiceImage.attr("src","./assets/images/paper.png");
+            }
+            else if (dbPlayer1Choice === 'p') {
+                playerChoiceImage.attr("src","./assets/images/scissors.png");
+            }
+            else {
+                playerChoiceImage.attr("src","./assets/images/question.png");
+            }
         }
-        else if (dbPlayer2Choice === 'p') {
-            playerChoiceImage.attr("src","./assets/images/paper.png");
-        }
-        else if (dbPlayer2Choice === 'p') {
-            playerChoiceImage.attr("src","./assets/images/scissors.png");
-        }
-        else {
-            playerChoiceImage.attr("src","./assets/images/question.png");
-            dbPlayer2Choice=null;
-        }
+        console.log("Player1 choice",dbPlayer1Choice);
+        console.log("Player2 choice",dbPlayer2Choice);
         checkThrows();
     }
 });
 
-function setPlayerChoice(playerChoice) {
-    if (playerNumber === 1) {
-        database.ref("/player1-choice").set(playerChoice);
+// When player 2 updates their choice in the database it will show this in the lobby.
+dbRefPlayer2Choice.on("value",function(snap) {
+    console.log("Player2 choice",snap.val());
+    if (!snap.val()) {
+        dbPlayer2Choice = "";
     }
-    else if (playerNumber === 2) {
-        database.ref("/player2-choice").set(playerChoice);
+    else
+    {
+        dbPlayer2Choice = snap.val();
+
+        if (playerNumber != 2)
+        {
+            var playerSection = $("#player-2-section");
+            var playerChoiceImage = playerSection.find("#player-choice-img");
+
+            if (dbPlayer2Choice === 'r') {
+                playerChoiceImage.attr("src","./assets/images/rock.png");
+            }
+            else if (dbPlayer2Choice === 'p') {
+                playerChoiceImage.attr("src","./assets/images/paper.png");
+            }
+            else if (dbPlayer2Choice === 'p') {
+                playerChoiceImage.attr("src","./assets/images/scissors.png");
+            }
+            else {
+                playerChoiceImage.attr("src","./assets/images/question.png");
+            }
+        }
+        console.log("Player1 choice",dbPlayer1Choice);
+        console.log("Player2 choice",dbPlayer2Choice);
+        checkThrows();
     }
-}
-
-// Initiate the game between the first two players in the queue.
-function initateNewGame() {
-    dbGameRound.set(1);
-    dbRefPlayer1Choice.set("");
-    dbRefPlayer2Choice.set("");
-
-    player1rec = dbRefWaitList.unshift();
-    player2rec = dbRefWaitList.unshift();
-    console.log(player1rec);
-    console.log(player2rec);
-}
+});

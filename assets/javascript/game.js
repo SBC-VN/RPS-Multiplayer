@@ -40,14 +40,52 @@ $(".register-btn").on("click",function() {
     $("#screen-name").val("");
 });
 
-function displayLobby(playerType) {    
+function displayLobby(playerType) {
     if (playerType === "btn-play") {
         dbAddPlayerToQueue();
     }
     $("#main-section").empty();
     $("#right-section").empty();
     $("#sub-header").text("Game Lobby");
-}   
+
+    $("#right-section").append($("#chat-section"));   
+
+    var playerContainer1=$('<div id="player-container-1" class="player-container">');
+    $("#main-section").append(playerContainer1);
+
+    var playerContainer2=$('<div id="player-container-2" class="player-container">');
+    $("#main-section").append(playerContainer2);
+
+    var resultsSection=$('<div id="results-section">');
+    resultsSection.append('<h2>Player <span id="winning-player">name</span> wins!</h2>');
+    resultsSection.css("display","none");
+    $("#main-section").append(resultsSection);
+
+    setSpectatorDisplay(1);
+    setSpectatorDisplay(2);
+}
+
+function setPlayerDisplay(playerNumber) {
+    if (playerNumber == 1 || playerNumber == 2) {
+        var genericPlayerSection = $("#player-play-section");
+        var playerSection = genericPlayerSection.clone();
+        playerSection.attr("id","player-"+playerNumber+"-section");
+        var playerContainer=$("#player-container-"+playerNumber);
+        playerContainer.empty();
+        playerContainer.append(playerSection);
+        $("#timer-section").css("display","block");
+        startRound();
+    }
+}
+
+function setSpectatorDisplay(playerNumber) {    
+    var genericPlayerSection = $("#player-view-section");
+    var playerSection = genericPlayerSection.clone();
+    playerSection.attr("id","player-"+playerNumber+"-section");
+    var playerContainer=$("#player-container-"+playerNumber);
+    playerContainer.empty();
+    playerContainer.append(playerSection);
+}
 
 $("#msg-submit-btn").on("click",function(event) {
     event.preventDefault();
@@ -92,7 +130,7 @@ $("#throw-button").on("click",function() {
 function timerTickHandler() {
     $("#time-remaining").text(--currentChoiceTime);
     if (currentChoiceTime <= 0) {
-        processThrow();
+        setPlayerChoice("?");
     }
 }
 
@@ -137,34 +175,6 @@ function endRound(winningPlayerNumber) {
     else {
     // Wait for 3 seconds, then initiate the next round.
         setTimeout(startRound,3000);
-    }
-}
-
-function checkThows() {
-    // Convert relative (playerThrowChoice) to absolute (player 1/2)
-    if (playerNumber === 1) {
-        player1Choice = playerThrowChoice;
-        player2Choice = dbPlayer2Choice;
-    }
-    else if (playerNumber === 2) {
-        player1Choice = dbPlayer1Choice;
-        player2Choice = playerThrowChoice;
-    }
-    else {
-        player1Choice = dbPlayer1Choice;
-        player2Choice = dbPlayer2Choice;
-    }
-
-    // If one of the players hasn't made a choice yet - need to wait.
-    if (player1Choice && player2Choice) {
-        // The matrix determines the winner...     
-        var winner = gameMatrix[gameChoices.indexOf(player1Choice)][gameChoices.indexOf(player2Choice)];
-        if (winner === 0) {
-            startRound("reset");
-        }
-        else {
-            endRound(winner);
-        }
     }
 }
 
